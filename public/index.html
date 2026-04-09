@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>해제 엔진 (Annotation & Critical Digest Studio)</title>
+  <style>
+    :root { color-scheme: dark; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif; background: #0f172a; color: #e5e7eb; }
+    .wrap { max-width: 1440px; margin: 0 auto; padding: 24px; }
+    h1 { margin: 0 0 10px; font-size: 32px; }
+    .sub { color: #94a3b8; margin-bottom: 24px; }
+    .grid { display: grid; grid-template-columns: 520px 1fr; gap: 20px; }
+    .card { background: #111827; border: 1px solid #334155; border-radius: 18px; padding: 18px; box-shadow: 0 12px 36px rgba(0,0,0,.18); }
+    label { display: block; font-size: 14px; margin-bottom: 8px; color: #cbd5e1; }
+    input[type="file"], select, textarea, button { width: 100%; box-sizing: border-box; border-radius: 12px; border: 1px solid #475569; background: #0b1220; color: #e5e7eb; }
+    textarea, select, input[type="file"] { padding: 12px; }
+    textarea { min-height: 180px; resize: vertical; }
+    .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .toggle { display: flex; gap: 12px; align-items: center; background: #0b1220; border: 1px solid #475569; border-radius: 12px; padding: 12px; }
+    .toggle label { margin: 0; }
+    button { padding: 14px 16px; font-weight: 700; cursor: pointer; background: linear-gradient(135deg, #2563eb, #7c3aed); border: none; }
+    .secondary { background: #1f2937; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+    .tab { width: auto; padding: 10px 14px; border-radius: 999px; border: 1px solid #475569; background: #1f2937; }
+    .tab.active { background: #2563eb; }
+    pre { white-space: pre-wrap; word-break: keep-all; line-height: 1.72; background: #020617; padding: 18px; border: 1px solid #334155; border-radius: 16px; min-height: 360px; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .row button { width: auto; }
+    .meta { color: #94a3b8; font-size: 13px; margin-top: 10px; }
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .mini { min-height: 180px; }
+    @media (max-width: 1100px) { .grid, .split { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>해제 엔진</h1>
+    <div class="sub">Annotation & Critical Digest Studio · 업로드 우선, 붙여넣기 보조 · 저장 후 자동 열기</div>
+    <div class="grid">
+      <div class="card">
+        <label>업로드 영역 (PDF / DOCX / TXT)</label>
+        <input id="file" type="file" accept=".pdf,.docx,.txt,.md" />
+
+        <div style="height:14px"></div>
+        <label>텍스트 붙여넣기 영역</label>
+        <textarea id="text" placeholder="업로드 파일이 없거나 추출이 불안정할 때 사용할 원문 텍스트를 붙여넣으세요."></textarea>
+
+        <div style="height:14px"></div>
+        <div class="controls">
+          <div>
+            <label>문서 유형</label>
+            <select id="docType">
+              <option>auto-detect</option>
+              <option>academic paper</option>
+              <option>newspaper article</option>
+              <option>magazine / criticism article</option>
+              <option>policy report</option>
+              <option>other</option>
+            </select>
+          </div>
+          <div>
+            <label>analysis depth</label>
+            <select id="depth"><option>brief</option><option selected>standard</option><option>deep</option></select>
+          </div>
+          <div>
+            <label>output tone</label>
+            <select id="tone"><option selected>academic</option><option>public-facing</option><option>editorial</option><option>critical</option></select>
+          </div>
+          <div>
+            <label>output length</label>
+            <select id="length"><option>short</option><option selected>medium</option><option>long</option></select>
+          </div>
+          <div>
+            <label>audience level</label>
+            <select id="audience"><option>general</option><option selected>student</option><option>researcher</option><option>policy reader</option></select>
+          </div>
+          <div>
+            <label>mode</label>
+            <select id="mode"><option selected>faithful-to-source</option><option>interpretive</option><option>critical-review</option></select>
+          </div>
+          <div>
+            <label>purpose</label>
+            <select id="purpose"><option>class presentation</option><option>research review</option><option>publication prep</option><option>content planning</option><option selected>other</option></select>
+          </div>
+        </div>
+
+        <div style="height:14px"></div>
+        <div class="controls">
+          <div class="toggle"><input id="includeQuotes" type="checkbox" /><label for="includeQuotes">include direct quotations</label></div>
+          <div class="toggle"><input id="includeGrounding" type="checkbox" checked /><label for="includeGrounding">include source-grounding by page or paragraph</label></div>
+          <div class="toggle"><input id="includeCharts" type="checkbox" checked /><label for="includeCharts">include chart/table interpretation</label></div>
+        </div>
+
+        <div style="height:14px"></div>
+        <div class="row">
+          <button id="generate">Generate 해제</button>
+          <button id="copy" class="secondary" type="button">Copy current tab</button>
+          <button id="exportMd" class="secondary" type="button">Markdown export</button>
+          <button id="regen" class="secondary" type="button">Regenerate selected section</button>
+        </div>
+        <div class="meta" id="status">대기 중</div>
+      </div>
+
+      <div class="card">
+        <div class="tabs">
+          <button class="tab active" data-tab="standard">표준 해제</button>
+          <button class="tab" data-tab="critical">비판적 해제</button>
+          <button class="tab" data-tab="presentation">발표용 해제</button>
+          <button class="tab" data-tab="abstractView">초록형 해제</button>
+          <button class="tab" data-tab="contentPlanning">콘텐츠 기획용 해제</button>
+        </div>
+        <pre id="result">여기에 결과가 표시됩니다.</pre>
+        <div class="meta" id="saveMeta">저장 정보 없음</div>
+
+        <div style="height:16px"></div>
+        <div class="split">
+          <div>
+            <label>side-by-side: source text</label>
+            <textarea id="sourceView" class="mini" readonly></textarea>
+          </div>
+          <div>
+            <label>selected generated 해제</label>
+            <textarea id="digestView" class="mini" readonly></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let current = null;
+    let currentTab = 'standard';
+    const resultEl = document.getElementById('result');
+    const digestView = document.getElementById('digestView');
+    const sourceView = document.getElementById('sourceView');
+    const statusEl = document.getElementById('status');
+    const saveMetaEl = document.getElementById('saveMeta');
+
+    function renderTab() {
+      if (!current || !current.result) return;
+      const content = current.result[currentTab] || '결과 없음';
+      resultEl.textContent = content;
+      digestView.value = content;
+      saveMetaEl.textContent = `saved: ${current.savedFilename} | path: ${current.savedPath} | opened: ${current.openedTarget || current.openedFileUrl}`;
+      document.querySelectorAll('.tab').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === currentTab));
+    }
+
+    document.querySelectorAll('.tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentTab = btn.dataset.tab;
+        renderTab();
+      });
+    });
+
+    document.getElementById('generate').addEventListener('click', async () => {
+      statusEl.textContent = '생성 중… 파일 저장과 자동 열기까지 진행합니다.';
+      const fd = new FormData();
+      const file = document.getElementById('file').files[0];
+      if (file) fd.append('file', file);
+      fd.append('text', document.getElementById('text').value);
+      fd.append('docType', document.getElementById('docType').value);
+      fd.append('depth', document.getElementById('depth').value);
+      fd.append('tone', document.getElementById('tone').value);
+      fd.append('length', document.getElementById('length').value);
+      fd.append('audience', document.getElementById('audience').value);
+      fd.append('mode', document.getElementById('mode').value);
+      fd.append('purpose', document.getElementById('purpose').value);
+      fd.append('includeQuotes', document.getElementById('includeQuotes').checked ? 'on' : 'off');
+      fd.append('includeGrounding', document.getElementById('includeGrounding').checked ? 'on' : 'off');
+      fd.append('includeCharts', document.getElementById('includeCharts').checked ? 'on' : 'off');
+      sourceView.value = document.getElementById('text').value;
+
+      const res = await fetch('/api/generate', { method: 'POST', body: fd });
+      const data = await res.json();
+      current = data;
+      renderTab();
+      statusEl.textContent = data.autoOpenSuccess
+        ? `완료. 자동 열기 성공. ${data.limitationNotes?.length ? '제한 메모 있음.' : ''}`
+        : `완료. 자동 열기 실패 — 경로와 file:// 링크를 확인하세요.`;
+    });
+
+    document.getElementById('copy').addEventListener('click', async () => {
+      const text = resultEl.textContent || '';
+      await navigator.clipboard.writeText(text);
+      statusEl.textContent = '현재 탭 내용을 복사했습니다.';
+    });
+
+    document.getElementById('exportMd').addEventListener('click', () => {
+      if (!current) return;
+      window.open(current.openedFileUrl, '_blank');
+    });
+
+    document.getElementById('regen').addEventListener('click', () => {
+      statusEl.textContent = '선택 섹션 재생성은 현재 전체 재생성 방식으로 처리합니다. Generate 해제를 다시 실행하세요.';
+    });
+  </script>
+</body>
+</html>

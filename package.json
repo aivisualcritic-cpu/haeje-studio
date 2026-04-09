@@ -1,0 +1,17 @@
+{
+  "name": "haeje-studio",
+  "version": "1.0.0",
+  "description": "해제 엔진 (Annotation & Critical Digest Studio)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "iconv-lite": "^0.7.2",
+    "jschardet": "^3.1.4",
+    "mammoth": "^1.12.0",
+    "multer": "^2.1.1",
+    "pdf-parse": "^2.4.5"
+  }
+}
